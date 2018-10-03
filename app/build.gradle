@@ -1,0 +1,61 @@
+apply plugin: 'com.android.model.application'
+
+model {
+    repositories {
+        libs(PrebuiltLibraries) {
+            SDL2 {
+                headers.srcDir "../SDL2/include"
+                binaries.withType(SharedLibraryBinary) {
+                    sharedLibraryFile = file("${gradle.libDistributionRoot}/SDL2/lib/${targetPlatform.getName()}/libSDL2.so")
+                }
+            }
+            main {
+                binaries.withType(SharedLibraryBinary) {
+                    sharedLibraryFile = file("${gradle.libDistributionRoot}/main/lib/${targetPlatform.getName()}/libmain.so")
+                }
+            }
+        }
+    }
+
+    android {
+        compileSdkVersion = gradle.sdkVersion
+        buildToolsVersion = gradle.buildToolsVersion
+
+        defaultConfig {
+            applicationId = 'rocks.georgik.sdlapp'
+            minSdkVersion.apiLevel = gradle.minSdkVersion
+        }
+        sources {
+            main {
+                jni {
+                    dependencies {
+                        project ':main' linkage 'shared'
+                    }   
+                }   
+                jniLibs {
+                    source {
+                        srcDir "${gradle.libDistributionRoot}/main/lib"
+                    }   
+                }   
+            }   
+        }   
+
+        buildTypes {
+            release {
+                minifyEnabled = false
+                proguardFiles.add(file('proguard-rules.txt'))
+            }
+        }
+    }
+}
+
+dependencies {
+    compile 'com.android.support.constraint:constraint-layout:+'
+    compile 'com.android.support.constraint:constraint-layout:1.0.1'
+}
+
+tasks.whenTaskAdded { task ->
+    if (task.name.contains('compile')) {
+        task.dependsOn ':main:distributeLib'
+    }
+}
